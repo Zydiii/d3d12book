@@ -416,15 +416,17 @@ bool D3DApp::InitDirect3D()
 {
 #if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
-{
+{ // 启用调试层
 	ComPtr<ID3D12Debug> debugController;
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 	debugController->EnableDebugLayer();
 }
 #endif
 
+    // 创建 DXGIFactory
 	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mdxgiFactory)));
 
+	// 创建 Hardware Device
 	// Try to create hardware device.
 	HRESULT hardwareResult = D3D12CreateDevice(
 		nullptr,             // default adapter
