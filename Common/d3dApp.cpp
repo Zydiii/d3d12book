@@ -472,11 +472,15 @@ bool D3DApp::InitDirect3D()
 	assert(m4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
 	
 #ifdef _DEBUG
+	// 输出适配器数据
     LogAdapters();
 #endif
 
+	// 创建 Command Objects
 	CreateCommandObjects();
+	// 创建 Swap Chain
     CreateSwapChain();
+	// 创建 RTV 和 DSV 描述符堆
     CreateRtvAndDsvDescriptorHeaps();
 
 	return true;
@@ -487,12 +491,15 @@ void D3DApp::CreateCommandObjects()
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	// 创建 Command Queue，GPU 至少维护一个 queue
 	ThrowIfFailed(md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
+	// 创建 Command Allocator，与 CommandList 相绑定，提交的命令实际由 allocator 维护
 	ThrowIfFailed(md3dDevice->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		IID_PPV_ARGS(mDirectCmdListAlloc.GetAddressOf())));
 
+	// 创建 Command List，提供了很多图形命令，供 CPU 调用提交命令
 	ThrowIfFailed(md3dDevice->CreateCommandList(
 		0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -503,6 +510,7 @@ void D3DApp::CreateCommandObjects()
 	// Start off in a closed state.  This is because the first time we refer 
 	// to the command list we will Reset it, and it needs to be closed before
 	// calling Reset.
+	// 第一次创建 Command List 之后需要 Close，因为会 reset
 	mCommandList->Close();
 }
 
