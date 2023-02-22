@@ -106,9 +106,11 @@ int D3DApp::Run()
 
 bool D3DApp::Initialize()
 {
+	// 创建窗口
 	if(!InitMainWindow())
 		return false;
 
+	// 初始化 DirectX
 	if(!InitDirect3D())
 		return false;
 
@@ -546,11 +548,13 @@ void D3DApp::CreateSwapChain()
 void D3DApp::FlushCommandQueue()
 {
 	// Advance the fence value to mark commands up to this fence point.
+	// 当前围栏值++
     mCurrentFence++;
 
     // Add an instruction to the command queue to set a new fence point.  Because we 
 	// are on the GPU timeline, the new fence point won't be set until the GPU finishes
 	// processing all the commands prior to this Signal().
+	// 在 GPU 端将围栏对象设定为指定的值，需要等前面的 commands 都完成再执行
     ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
 
 	// Wait until the GPU has completed commands up to this fence point.
@@ -559,9 +563,11 @@ void D3DApp::FlushCommandQueue()
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
         // Fire event when GPU hits current fence.  
+		// 指定在围栏达到特定值时引发的事件，即 fence 到达下一个围栏值后会触发 event
         ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
 
         // Wait until the GPU hits current fence event is fired.
+		// 等待指定对象处于信号状态或超时间隔已过，然后关闭打开的对象句柄
 		WaitForSingleObject(eventHandle, INFINITE);
         CloseHandle(eventHandle);
 	}
