@@ -73,25 +73,32 @@ int D3DApp::Run()
 {
 	MSG msg = {0};
  
+	// 重置时间
 	mTimer.Reset();
 
+	// 消息 WM_QUIT 意为退出
 	while(msg.message != WM_QUIT)
 	{
 		// If there are Window messages then process them.
+		// 处理 Window Message
 		if(PeekMessage( &msg, 0, 0, 0, PM_REMOVE ))
 		{
             TranslateMessage( &msg );
             DispatchMessage( &msg );
 		}
 		// Otherwise, do animation/game stuff.
+		// 更新并绘制
 		else
         {	
 			mTimer.Tick();
 
 			if( !mAppPaused )
 			{
+				// 计算帧率等数据
 				CalculateFrameStats();
+				// 更新数据
 				Update(mTimer);	
+				// 绘制
                 Draw(mTimer);
 			}
 			else
@@ -115,6 +122,7 @@ bool D3DApp::Initialize()
 		return false;
 
     // Do the initial resize code.
+	// 进行初始状态的 resize 操作
     OnResize();
 
 	return true;
@@ -149,14 +157,17 @@ void D3DApp::OnResize()
 	// Flush before changing any resources.
 	FlushCommandQueue();
 
+	// 将命令列表重置回其初始状态
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
 	// Release the previous resources we will be recreating.
+	// 释放资源
 	for (int i = 0; i < SwapChainBufferCount; ++i)
 		mSwapChainBuffer[i].Reset();
     mDepthStencilBuffer.Reset();
 	
 	// Resize the swap chain.
+	// 重设 swap chain 的大小，设置当前 backbuffer index
     ThrowIfFailed(mSwapChain->ResizeBuffers(
 		SwapChainBufferCount, 
 		mClientWidth, mClientHeight, 
@@ -165,6 +176,7 @@ void D3DApp::OnResize()
 
 	mCurrBackBuffer = 0;
  
+	// 创建 RTV
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (UINT i = 0; i < SwapChainBufferCount; i++)
 	{
@@ -174,6 +186,7 @@ void D3DApp::OnResize()
 	}
 
     // Create the depth/stencil buffer and view.
+	// 创建 DS
     D3D12_RESOURCE_DESC depthStencilDesc;
     depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     depthStencilDesc.Alignment = 0;
@@ -207,6 +220,7 @@ void D3DApp::OnResize()
         IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
 
     // Create descriptor to mip level 0 of entire resource using the format of the resource.
+	// 创建 DSV
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -215,18 +229,22 @@ void D3DApp::OnResize()
     md3dDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
 
     // Transition the resource from its initial state to be used as a depth buffer.
+	// 使用资源屏障同步资源状态
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDepthStencilBuffer.Get(),
 		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 	
     // Execute the resize commands.
+	// 标记 command list 结束并提交
     ThrowIfFailed(mCommandList->Close());
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	// Wait until resize is complete.
+	// 等待当前命令完成
 	FlushCommandQueue();
 
 	// Update the viewport transform to cover the client area.
+	// 更新视口参数
 	mScreenViewport.TopLeftX = 0;
 	mScreenViewport.TopLeftY = 0;
 	mScreenViewport.Width    = static_cast<float>(mClientWidth);
